@@ -671,33 +671,18 @@ def generate_token_OTP(mobile, request_header):
                         print(f'Token Generated: {token}')
                         valid_token = True
                         return token
-
                     else:
                         print('Unable to Validate OTP')
                         print(f"Response: {token.text}")
                         print(f"Retry with {mobile} ? (y/n Default y): ")
+                        time.sleep(1)
                         pass
-#                     retry = input(f"Retry with {mobile} ? (y/n Default y): ")
-#                        retry = retry if retry else 'y'
-#                        time.sleep(1)
-#                        if retry == 'y':
-#                            pass
-#                        else:
-#                            sys.exit()
-
-
             else:
                 print('Unable to Generate OTP')
                 print(txnId.status_code, txnId.text)
                 print(f"Retry with {mobile} ? (y/n Default y): ")
+                time.sleep(1)
                 pass
-#               retry = input(f"Retry with {mobile} ? (y/n Default y): ")
-#                retry = retry if retry else 'y'
-#               if retry == 'y':
-#                    pass
-#               else:
-#                   sys.exit()
-
         except Exception as e:
             print(str(e))
 
