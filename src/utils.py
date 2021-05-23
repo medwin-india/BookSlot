@@ -13,7 +13,7 @@ OTP_PUBLIC_URL = 'https://cdn-api.co-vin.in/api/v2/auth/public/generateOTP'
 OTP_PRO_URL = 'https://cdn-api.co-vin.in/api/v2/auth/generateMobileOTP'
 
 WARNING_BEEP_DURATION = (1000, 2000)
-
+apitimeout=int(15)
 
 try:
     import winsound
@@ -241,7 +241,7 @@ def check_calendar_by_district(request_header, vaccine_type, location_dtls, star
 
         options = []
         for location in location_dtls:
-            resp = requests.get(base_url.format(location['district_id'], start_date), headers=request_header)
+            resp = requests.get(base_url.format(location['district_id'], start_date), headers=request_header,timeout=apitimeout)
 
             if resp.status_code == 401:
                 print('TOKEN INVALID')
@@ -285,7 +285,7 @@ def check_calendar_by_pincode(request_header, vaccine_type, location_dtls, start
 
         options = []
         for location in location_dtls:
-            resp = requests.get(base_url.format(location['pincode'], start_date), headers=request_header)
+            resp = requests.get(base_url.format(location['pincode'], start_date), headers=request_header,timeout=apitimeout)
 
             if resp.status_code == 401:
                 print('TOKEN INVALID')
@@ -314,7 +314,7 @@ def check_calendar_by_pincode(request_header, vaccine_type, location_dtls, start
 
 def generate_captcha(request_header):
     print('================================= GETTING CAPTCHA ==================================================')
-    resp = requests.post(CAPTCHA_URL, headers=request_header)
+    resp = requests.post(CAPTCHA_URL, headers=request_header,timeout=apitimeout)
     print(f'Captcha Response Code: {resp.status_code}')
 
     if resp.status_code == 200:
@@ -336,7 +336,7 @@ def book_appointment(request_header, details):
 
             print('================================= ATTEMPTING BOOKING ==================================================')
 
-            resp = requests.post(BOOKING_URL, headers=request_header, json=details)
+            resp = requests.post(BOOKING_URL, headers=request_header, json=details,timeout=apitimeout)
             print(f'Booking Response Code: {resp.status_code}')
             print(f'Booking Response : {resp.text}')
 
@@ -514,7 +514,7 @@ def get_districts(request_header):
         2. Lists all districts in that state, prompts to select required ones, and
         3. Returns the list of districts as list(dict)
     """
-    states = requests.get('https://cdn-api.co-vin.in/api/v2/admin/location/states', headers=request_header)
+    states = requests.get('https://cdn-api.co-vin.in/api/v2/admin/location/states', headers=request_header,timeout=apitimeout)
 
     if states.status_code == 200:
         states = states.json()['states']
@@ -528,7 +528,7 @@ def get_districts(request_header):
         state = int(input('\nEnter State index: '))
         state_id = states[state - 1]['state_id']
 
-        districts = requests.get(f'https://cdn-api.co-vin.in/api/v2/admin/location/districts/{state_id}', headers=request_header)
+        districts = requests.get(f'https://cdn-api.co-vin.in/api/v2/admin/location/districts/{state_id}', headers=request_header,timeout=apitimeout)
 
         if districts.status_code == 200:
             districts = districts.json()['districts']
@@ -573,7 +573,7 @@ def get_beneficiaries(request_header):
         2. Prompts user to select the applicable beneficiaries, and
         3. Returns the list of beneficiaries as list(dict)
     """
-    beneficiaries = requests.get(BENEFICIARIES_URL, headers=request_header)
+    beneficiaries = requests.get(BENEFICIARIES_URL, headers=request_header,timeout=apitimeout)
 
     if beneficiaries.status_code == 200:
         beneficiaries = beneficiaries.json()['beneficiaries']
@@ -653,19 +653,19 @@ def generate_token_OTP(mobile, request_header):
             data = {"mobile": mobile,
                     "secret": "U2FsdGVkX1+z/4Nr9nta+2DrVJSv7KS6VoQUSQ1ZXYDx/CJUkWxFYG6P3iM/VW+6jLQ9RDQVzp/RcZ8kbT41xw=="
             }
-            txnId = requests.post(url=OTP_PRO_URL, json=data, headers=request_header)
+            txnId = requests.post(url=OTP_PRO_URL, json=data, headers=request_header,timeout=apitimeout)
 
             if txnId.status_code == 200:
                 print(f"Successfully requested OTP for mobile number {mobile} at {datetime.datetime.today()}..")
                 txnId = txnId.json()['txnId']
-
+                beep(WARNING_BEEP_DURATION[0], WARNING_BEEP_DURATION[1])
                 OTP = input("Enter OTP (If this takes more than 2 minutes, press Enter to retry): ")
                 if OTP:
                     data = {"otp": sha256(str(OTP).encode('utf-8')).hexdigest(), "txnId": txnId}
                     print(f"Validating OTP..")
 
                     token = requests.post(url='https://cdn-api.co-vin.in/api/v2/auth/validateMobileOtp', json=data,
-                                          headers=request_header)
+                                          headers=request_header,timeout=apitimeout)
                     if token.status_code == 200:
                         token = token.json()['token']
                         print(f'Token Generated: {token}')
@@ -674,14 +674,14 @@ def generate_token_OTP(mobile, request_header):
                     else:
                         print('Unable to Validate OTP')
                         print(f"Response: {token.text}")
-                        print(f"Retry with {mobile} ? (y/n Default y): ")
-                        time.sleep(1)
+                        print(f"Retry with {mobile} after 3 sec ")
+                        time.sleep(3)
                         pass
             else:
                 print('Unable to Generate OTP')
                 print(txnId.status_code, txnId.text)
-                print(f"Retry with {mobile} ? (y/n Default y): ")
-                time.sleep(1)
+                print(f"Retry with {mobile} after 3 sec: ")
+                time.sleep(3)
                 pass
         except Exception as e:
             print(str(e))
